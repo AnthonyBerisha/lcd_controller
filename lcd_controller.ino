@@ -1,5 +1,5 @@
 #define RS    4
-#define RW    9
+#define RW    9 // Not used because i'm just writing data to the display
 #define E     6
 #define D7    13
 #define D6    12
@@ -29,7 +29,7 @@ void send_byte(byte c)
   if (c & 0x40) digitalWrite(D6, HIGH); else  digitalWrite(D6, LOW);
   if (c & 0x20) digitalWrite(D5, HIGH); else  digitalWrite(D5, LOW);
   if (c & 0x10) digitalWrite(D4, HIGH); else  digitalWrite(D4, LOW);
-  strobe();
+  strobe();   // Necessary strobe because of 4-bit mode
   if (c & 0x08) digitalWrite(D7, HIGH); else  digitalWrite(D7, LOW);
   if (c & 0x04) digitalWrite(D6, HIGH); else  digitalWrite(D6, LOW);
   if (c & 0x02) digitalWrite(D5, HIGH); else  digitalWrite(D5, LOW);
@@ -42,7 +42,7 @@ void send_byte(byte c)
 void lcd_init(void)
 {
   pinMode(RS, OUTPUT);
-  pinMode(RW, INPUT);
+  // pinMode(RW, INPUT); In the schematic RW is always tied to GND because i don't need to receives data from it
   pinMode(E , OUTPUT);
   pinMode(D7, OUTPUT);
   pinMode(D6, OUTPUT);
@@ -61,6 +61,7 @@ void lcd_init(void)
 
   strobe();
   delay(5);
+
   // 4-bit mode
   send_byte(0x28);
   send_byte(0x0c);
@@ -79,7 +80,6 @@ void lcd_puts(const char * s)
     int i = 0;
     while (i < 16)                   // Write text until the end of the display
     { 
-
         send_byte(s[i]);
         i++;
     }
@@ -99,27 +99,24 @@ void lcd_puts(const char * s)
 // Takes a char as an argument and sends the corresponding byte of the passed char
 void lcd_putc(const char c)
 {
-  digitalWrite(RS,HIGH);      // write character
-  if (c == '\n')  
-  {
-    for (int i = 0; i < 24; i++)
-      send_byte(' ');
-  }
-  else
-    send_byte(c);
+  digitalWrite(RS,HIGH);
+  send_byte(c);
 }
 
 void setup() 
 {
-  Serial.begin(9600);
-  while (! Serial);
+  // Serial.begin(9600);
+  // while (! Serial);
   lcd_init();
 }
 
-//* Instruction set *//
+/*    Instruction set
+      the functions will be in the same format as i_clear().
+      The i_ prefix stands for instruction.
+*/
 
 // clear instruction
-void iclear()
+void i_clear()
 {
   digitalWrite(RS, LOW);
   send_byte(0x01);
@@ -128,11 +125,10 @@ void iclear()
 
 void loop()
 { 
-  lcd_puts("0123456789ABDCE F je suis un pd");
-  Serial.print("op: ");
-  Serial.println(digitalRead(RW));
+  // In this example loop, I send a string to the display, wait 1sec, clear the display, wait again
+  lcd_puts("string to send");
   delay(1000);
-  iclear();
+  i_clear();
   delay(1000);
   
 }
